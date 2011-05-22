@@ -1,0 +1,12 @@
+EmptyTile * 6, MountainTile * 3, EmptyTile * 2
+LedgeTile, EmptyTile * 2, LedgeTile * 3, MountainTile * 3, EmptyTile * 2
+LedgeTile * 2, StepTile * 2, LedgeTile * 2, MountainTile * 3, EmptyTile * 2
+EmptyTile * 3, InteractTile * 4, MountainTile * 2, EmptyTile * 2
+EntranceTile * 2, SolidTile * 6, EmptyTile * 3
+WaterTile * 2, SolidTile * 6, EmptyTile * 3
+WaterTile * 2, SolidTile * 6, EmptyTile * 3
+WaterTile * 2, SolidTile * 6, EmptyTile * 3
+WaterTile * 5, SolidTile * 3, WaterTile, SolidTile * 2
+SolidTile, WaterTile * 3, SolidTile * 7
+SolidTile * 11
+SolidTile * 11

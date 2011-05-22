@@ -16,14 +16,28 @@ class Controls:
     def __getattr__(self, key):
       return self.valid_controls.get(key, None)
 
+    @property
     def key_list(self):
       return self.valid_controls.keys()
 
+    @property
     def val_list(self):
       return self.valid_controls.values()
 
   __metaclass__ = MetaControls
 
-print Controls.vals
+class ControlState:
+  class MetaControlState(type):
+    keysdown = set()
 
+    def down(self, key):
+      return key in self.keysdown
 
+    def set_down(self, key):
+      self.keysdown.add(key)
+
+    def set_up(self, key):
+      if self.down(key):
+        self.keysdown.remove(key)
+
+  __metaclass__ = MetaControlState

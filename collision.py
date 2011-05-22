@@ -1,58 +1,41 @@
 import pygame.sprite
-from multimethod import SymmetricTravel, multimethod
 from tile import *
 
-def sprite_collision(player, tile):
-  if pygame.sprite.collide_rect(player, tile):
-    print player.current_tile
-    return not can_enter(player.current_tile,tile)
+def sprite_collision(next_tile, tile):
+  if pygame.sprite.collide_rect(next_tile, tile):
+    #print player.current_tile, tile
+    curr_loc = None 
+    targ_loc = None
+    for ix, t in enumerate(tiletypes):
+      if isinstance(next_tile, t):
+        curr_loc = ix
+      if isinstance(tile, t):
+        targ_loc = ix
+    return not can_enter[curr_loc][targ_loc]
   return False
 
-@SymmetricTravel(EmptyTile, GrassTile, StepTile)
-def can_enter(fro, to):
-  return True
+tiletypes = [ #Empty,Solid,Entrance,Water,Interact,Grass,Ledge,Mountain,Step
+# tiletypes[row][col]
+    EmptyTile, 
+    SolidTile, 
+    EntranceTile, 
+    WaterTile, 
+    InteractTile,
+    GrassTile, 
+    LedgeTile, 
+    MountainTile, 
+    StepTile,
+  ]
 
-@multimethod(EntranceTile, EmptyTile)
-def can_enter(fro, to):
-  return True
-
-@multimethod(EmptyTile, WaterTile)
-def can_enter(fro, to):
-  return False
-
-@multimethod(WaterTile, GrassTile, StepTile, EmptyTile,
-                                              rootto=True)
-def can_enter(fro, to):
-  return True
-
-@multimethod(StepTile, EmptyTile, GrassTile, MountainTile,
-                                                  rootto=True)
-def can_enter(fro, to):
-  return True
-
-@SymmetricTravel(MountainTile)
-def can_enter(fro, to):
-  return True
-
-"""
-EmptyTile
-SolidTile
-EntranceTile
-WaterTile
-InteractTile
-GrassTile
-LedgeTile
-MountainTile
-StepTile
-"""
-
-@SymmetricTravel(LedgeTile, EmptyTile)
-def can_enter(fro, to):
-  print "sdfsdfdF"
-  return False
-
-@multimethod(SolidTile, WaterTile, GrassTile, StepTile, EntranceTile,
-                                        MountainTile, LedgeTile, rootfrom=True)
-def can_enter(fro, to):
-  return False
+can_enter = [
+    [True, False,True, False,True, True, True, False,True],
+    [False,False,False,False,False,False,False,False,False],
+    [False,False,False,False,False,False,False,False,False],
+    [True, False,True, True, True, True, False,False,True],
+    [True, False,True, True, True, True, True, False,True],
+    [True, False,True, False,True, True, True, False,True],
+    [True, False,False,False,True, True, False,False,False],
+    [False,False,False,False,False,False,False,False,False],
+    [True, False,True, False,True, True, False,False,True],
+ ]
 

@@ -2,7 +2,7 @@ import pygame
 from pygame.locals import *
 
 class Character(pygame.sprite.Sprite):
-  def __init__(self, tile, front, back=None, left=None, right=None):
+  def __init__(self, front, back=None, left=None, right=None):
     pygame.sprite.Sprite.__init__(self)
     self.default = front
     self.animated = False
@@ -14,7 +14,6 @@ class Character(pygame.sprite.Sprite):
     self.standing = {K_UP:back, K_DOWN:front, K_LEFT:left, K_RIGHT:right}
     self.animation = None
     self.update_dir = None
-    self.current_tile = tile
 
   def set_animated(self, animup, animdown, animleft, animright = None):
     if not animright:
@@ -35,12 +34,14 @@ class Character(pygame.sprite.Sprite):
     else:
       self.image = self.standing.get(self.direction, self.default)
 
-  def move(self, direction):
+  def will_move(self, direction):
     if self.direction == direction:
       return True
-    else:
+    elif direction in self.standing:
       self.direction = direction
       self.update_dir = direction
+      return False
+    else:
       return False
 
   def update(self, *args):

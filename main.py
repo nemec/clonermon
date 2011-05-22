@@ -1,13 +1,16 @@
+import os
+import sys
 import pygame
-from pygame.locals import *
-import os, sys
-from spritesheet import spritesheet
-from controls import Controls
-import GameMap
-import tile
 import pygame.sprite
+from pygame.locals import *
+
+import tile
+import gamemap
 import character
 import collision
+import constants
+from spritesheet import spritesheet
+from controls import Controls, ControlState
 
 import debug
 
@@ -15,63 +18,83 @@ pygame.init()
 
 def setup_event_queue():
   pygame.event.set_allowed(None)
-  pygame.event.set_allowed([QUIT])
+  pygame.event.set_allowed([QUIT, KEYDOWN, KEYUP])
   pygame.key.set_repeat(50, 50)
 
-def main():
-  screen = pygame.display.set_mode((160,144))
-  setup_event_queue()
-  out = tile.Outside()
-  background = pygame.Surface(screen.get_size())
-  game_map = GameMap.Map()
-  pebbles = out.get_tile("pebbles")
-  ledge = out.get_tile("ledge")
-  ledge.rect = ledge.rect.move((0,16))
-  game_map.add(pebbles)
-  game_map.add(ledge)
-  ss = spritesheet("people_16.png", pad=2)
-  player = character.Player(pebbles, *ss.images_pos([(1,7),(1,0),(1,1)]))
-  player.set_animated(*ss.images_pos([(1,3),(1,2),(0,8)]))
-  player.rect = player.rect.move(16*4, 16*4)
-  playersprite = pygame.sprite.RenderPlain(player)
+def build_map(game_map):
+  #out = tile.Outside()
+  #pebbles = lambda : out.get_tile("pebbles")
+  #ledge = lambda : out.get_tile("l_ledge")
+  #mount = lambda : out.get_tile("c_mountain")
+  #for x in xrange(20):
+  #  for y in xrange(4):
+      
+  #game_map.add(pebbles(), (0,0))
+  #game_map.add(ledge(), (0,-1))
+  #game_map.add(ledge(), (1, 0))
+  game_map.background.load_from_file("tiny.map")
+  
 
-  background.fill((0,255,0))
-  screen.blit(background, (0,0))
+def main():
+  tile_size = 16
+  game_map = gamemap.Screen(tilesize = tile_size)
+  setup_event_queue()
+
+  ss = spritesheet("people_16.png", size=tile_size, pad=2)
+  player = character.Player(*ss.images_pos([(1,7),(1,0),(1,1)]))
+  player.set_animated(*ss.images_pos([(1,3),(1,2),(0,8)]))
+  game_map.set_player(player)
+
+  build_map(game_map)
 
   clock = pygame.time.Clock()
 
-  #screen.blit(*pebbles.get_blit())
-  #debug.print_outline(screen, pebbles)
   moving = False
   move_count = 0
   move_dist = 2
 
   running = True
   while running:
-    clock.tick(30)
+    clock.tick(constants.TICKSPEED)
+
     if not moving:
-      move_screen = False
       keys = [k for k, p in enumerate(pygame.key.get_pressed()) if k in
-                Controls.val_list() and p]
-      # Smoother movement, doesn't always work
-      # Unfortunately, prefers movement with lower scancode first
-      if len(keys) > 0 and player.move(keys[0]):
-        moving = True
-      if Controls.A in keys:
-        print "A"
-      elif Controls.B in keys:
-        print "B"
-      elif Controls.START in keys:
-        print "Start"
-      elif Controls.SELECT in keys:
-        print "Select"
+                Controls.val_list and p]
+      # Prefers movement with lower scancode first
+      if len(keys) > 0:
+        if player.will_move(keys[0]):
+          adj = game_map.get_adjacent_tile(player, player.direction)
+          if adj is None or not pygame.sprite.spritecollideany(adj, game_map,
+                                                      collision.sprite_collision):
+            moving = True
+            continue
+          else:
+            game_map.update() # Just update our direction
+
       for event in pygame.event.get():
         if event.type == pygame.QUIT or event.type == QUIT:
           running = False
           break
-    # Smooths over the moving - not moving transition
-    if moving:
-      if move_count == player.rect.height: # Player height = width, either works
+        elif event.type == KEYDOWN and not ControlState.down(event.key):
+          ControlState.set_down(event.key)
+          if event.key == Controls.A:
+            print "A"
+          elif event.key == Controls.B:
+            print "B"
+          elif event.key == Controls.START:
+            print "Start"
+          elif event.key == Controls.SELECT:
+            print "Select"
+          elif event.key in debug.keybindings:
+            debug.keybindings[event.key]()
+          else:
+            ControlState.set_up(event.key)
+          pygame.event.clear(KEYDOWN)
+        elif event.type == KEYUP:
+          ControlState.set_up(event.key)
+        
+    else:
+      if move_count == player.rect.height:# Player height == width, either works
         # set our current tile
         til = pygame.sprite.spritecollide(player, game_map, False)
         if til:
@@ -83,22 +106,19 @@ def main():
         # Only start animating halfway through, makes movement seem more fluid
         if move_count > player.rect.height/2:
           player.animate(True)
+
         cur_dist = move_dist
+
+        # Make sure we don't move further than our height
         if cur_dist + move_count > player.rect.height:
           cur_dist = player.rect.height - move_count
+
         move_count+=cur_dist
         game_map.update(increment=cur_dist, direction=player.direction)
-        collide = pygame.sprite.spritecollideany(player, game_map,
-                                                    collision.sprite_collision)
-        # Reverse the move
-        if collide:
-          game_map.update(increment=-cur_dist, direction=player.direction)
+        
       pygame.event.clear(KEYDOWN)
 
-    screen.blit(background, (0,0))
-    playersprite.update(game_map)
-    game_map.draw(screen)
-    playersprite.draw(screen)
+    game_map.draw()
     pygame.display.update()
 
   print "Exiting..."
